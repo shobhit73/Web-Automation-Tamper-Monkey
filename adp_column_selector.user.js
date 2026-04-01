@@ -85,6 +85,7 @@
         "Termination Reason Code (Employment Profile)",
         "Termination Reason Description (Employment Profile)",
         "Tobacco User (Personal Profile)",
+        "Sex (Personal Profile)",
         "Gender / Sex (Self-ID) (Personal Profile)",
         "Marital Status Code (Personal Profile)",
         "Marital Status Description (Personal Profile)",
