@@ -86,6 +86,7 @@
         "Termination Reason Description (Employment Profile)",
         "Tobacco User (Personal Profile)",
         "Sex (Personal Profile)",
+        "Gender / Sex (Self-ID) (Personal Profile)",
         "Marital Status Code (Personal Profile)",
         "Marital Status Description (Personal Profile)",
         "FLSA Description (Employment Profile)",
@@ -143,6 +144,7 @@
         "CT Filing Status (Tax Withholdings)": "CT Filing Status",
         "Tax ID (SSN) (Personal Profile)": "Tax ID",
         "Sex (Personal Profile)": "Sex",
+        "Gender / Sex (Self-ID) (Personal Profile)": "Gender / Sex",
         "Annual Salary (Employment Profile - Pay Rates)": "Annual Salary",
         "Reports To Associate ID (Employment Profile)": "Reports To"
     };
