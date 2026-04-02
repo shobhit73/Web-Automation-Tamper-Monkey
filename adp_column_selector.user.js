@@ -142,7 +142,7 @@
 
     var corrections = {
         "CT Filing Status (Tax Withholdings)": "CT Filing Status",
-        "Tax ID (SSN) (Personal Profile)": "Tax ID",
+        "Tax ID (SSN) (Personal Profile)": "Tax ID (SSN)",
         "Sex (Personal Profile)": "Sex",
         "Gender / Sex (Self-ID) (Personal Profile)": "Gender / Sex",
         "Annual Salary (Employment Profile - Pay Rates)": "Annual Salary",
