@@ -350,17 +350,145 @@
         return false;
     }
 
+    function finishRun(customMsg) {
+        isRunning = false;
+        statusDiv.textContent = 'Status: Complete!';
+        statusDiv.style.color = '#28a745';
+        sitFitBtn.disabled = false;
+        censusBtn.disabled = false;
+        if (failedFields.length > 0) {
+            logDiv.innerHTML = '<span style="color:red;font-weight:bold;">MISSING FIELDS:</span><br>' + failedFields.join('<br>');
+        } else {
+            logDiv.innerHTML = customMsg || '<span style="color:green;font-weight:bold;">All selected successfully!</span>';
+        }
+    }
+
+    function unmaskSSN() {
+        logDiv.innerHTML = '<span style="color:blue;font-weight:bold;">Unmasking SSN...</span>';
+        statusDiv.textContent = 'Status: Formatting';
+        var step = 1;
+        var attempts = 0;
+        
+        function nextStep() {
+            if (attempts > 20) {
+                finishRun('<span style="color:orange;font-weight:bold;">SSN Unmask failed. Please apply format manually.</span>');
+                return;
+            }
+            
+            if (step === 1) {
+                // Try direct exact match using properties from your HTML
+                var actionBtn = document.querySelector('.field-actions-trigger[aria-label="Tax ID (SSN)"]');
+                
+                // Fallback: search for Pendo ID in right context
+                if (!actionBtn) {
+                    var btns = document.querySelectorAll('[data-pendo-id="PENDO_ADPR_CANVAS_FIELD_MENU"]');
+                    for (var i = 0; i < btns.length; i++) {
+                        if (btns[i].getAttribute('aria-label') === 'Tax ID (SSN)' || (btns[i].parentElement && btns[i].parentElement.parentElement && btns[i].parentElement.parentElement.textContent.indexOf('Tax ID (SSN)') !== -1)) {
+                            actionBtn = btns[i];
+                            break;
+                        }
+                    }
+                }
+                
+                // Final generic fallback from before
+                if (!actionBtn) {
+                    var spans = document.querySelectorAll('span, div');
+                    var ssnLabel = null;
+                    for (var s = 0; s < spans.length; s++) {
+                        if ((spans[s].textContent || '').trim() === 'Tax ID (SSN)' && spans[s].children.length === 0) {
+                            ssnLabel = spans[s]; break;
+                        }
+                    }
+                    if (ssnLabel) {
+                        var curr = ssnLabel;
+                        for (var lvl = 0; lvl < 7; lvl++) {
+                            if (!curr || !curr.parentElement) break;
+                            curr = curr.parentElement;
+                            actionBtn = curr.querySelector('.field-actions-trigger, .adpr-action-menu-trigger, [data-pendo-id="PENDO_ADPR_CANVAS_FIELD_MENU"]');
+                            if (actionBtn) break;
+                        }
+                    }
+                }
+
+                if (actionBtn && actionBtn.getBoundingClientRect().width > 0) {
+                    // Make sure it's scrolled into view IMMEDIATELY, not smoothly. 
+                    // Smooth scrolling over 68 columns takes seconds, and the click fires while it's still moving!
+                    try { actionBtn.scrollIntoView({behavior: "instant", block: "center", inline: "center"}); } catch(e) {
+                        try { actionBtn.scrollIntoView(); } catch(e2) {}
+                    }
+                    
+                    // Give it a tiny 100ms pause to let the browser snap the scroll before clicking
+                    setTimeout(function() {
+                        ['mouseover', 'mouseenter', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function(eventType) {
+                            try { actionBtn.dispatchEvent(new MouseEvent(eventType, { bubbles: true, cancelable: true, view: window, button: 0, buttons: 1 })); } catch(e) {}
+                        });
+                        try { actionBtn.click(); } catch(e){}
+                    }, 100);
+                    
+                    step = 2; attempts = 0; 
+                }
+            } else if (step === 2) {
+                // Try Pendo ID first
+                var formatTarget = document.querySelector('[data-pendo-id="PENDO_ADPR_CANVAS_FIELD_MENU_FORMAT"]');
+                
+                // Fallback text match
+                if (!formatTarget) {
+                    var menuSpans = document.querySelectorAll('span, a, div');
+                    for (var j = 0; j < menuSpans.length; j++) {
+                        if ((menuSpans[j].textContent || '').trim() === 'Format') {
+                            if (menuSpans[j].getBoundingClientRect().width > 0) {
+                                formatTarget = menuSpans[j].closest('li, div[role="button"]') || menuSpans[j];
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (formatTarget && formatTarget.getBoundingClientRect().width > 0) {
+                    ['mouseover', 'mouseenter', 'click'].forEach(function(eventType) {
+                         try { formatTarget.dispatchEvent(new MouseEvent(eventType, { bubbles: true, cancelable: true, view: window, button: 0, buttons: 1 })); } catch(e) {}
+                    });
+                    try { formatTarget.click(); } catch(e){}
+                    
+                    step = 3; attempts = 0;
+                }
+            } else if (step === 3) {
+                var optionSpans = document.querySelectorAll('span, div');
+                for (var k = 0; k < optionSpans.length; k++) {
+                    if ((optionSpans[k].textContent || '').trim() === '123-45-6789') {
+                        if (optionSpans[k].getBoundingClientRect().width > 0) {
+                            var unmaskTarget = optionSpans[k].closest('li, div.menu-item') || optionSpans[k];
+                            simulateClick(unmaskTarget);
+                            try{ optionSpans[k].click(); } catch(e){} 
+                            step = 4; attempts = 0; break;
+                        }
+                    }
+                }
+            } else if (step === 4) {
+                var btnSpans = document.querySelectorAll('span, button');
+                for (var m = 0; m < btnSpans.length; m++) {
+                    if ((btnSpans[m].textContent || '').trim() === 'CONTINUE') {
+                        if (btnSpans[m].getBoundingClientRect().width > 0) {
+                            var continueTarget = btnSpans[m].closest('button') || btnSpans[m];
+                            simulateClick(continueTarget);
+                            finishRun('<span style="color:green;font-weight:bold;">All selected and SSN unmasked!</span>');
+                            return; 
+                        }
+                    }
+                }
+            }
+            attempts++;
+            setTimeout(nextStep, 500);
+        }
+        setTimeout(nextStep, 1000);
+    }
+
     function processNext() {
         if (!isRunning || currentIndex >= activeColumns.length) {
-            isRunning = false;
-            statusDiv.textContent = 'Status: Complete!';
-            statusDiv.style.color = '#28a745';
-            sitFitBtn.disabled = false;
-            censusBtn.disabled = false;
-            if (failedFields.length > 0) {
-                logDiv.innerHTML = '<span style="color:red;font-weight:bold;">MISSING FIELDS:</span><br>' + failedFields.join('<br>');
+            if (activeColumns === CENSUS_COLUMNS && failedFields.indexOf('Tax ID (SSN) (Personal Profile)') === -1) {
+                unmaskSSN();
             } else {
-                logDiv.innerHTML = '<span style="color:green;font-weight:bold;">All selected successfully!</span>';
+                finishRun();
             }
             return;
         }
